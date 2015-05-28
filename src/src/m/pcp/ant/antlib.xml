@@ -1,0 +1,14 @@
+<antlib>
+    <typedef name="list" classname="m.pcp.ant.tasks.ListTask" />
+    <typedef name="map" classname="m.pcp.ant.tasks.MapTask" />
+    <typedef name="set" classname="m.pcp.ant.tasks.SetTask" />
+    <typedef name="add" classname="m.pcp.ant.tasks.AddTask" />
+    <typedef name="put" classname="m.pcp.ant.tasks.PutTask" />
+    <typedef name="for" classname="m.pcp.ant.tasks.ForTask" />
+    <typedef name="while" classname="m.pcp.ant.tasks.WhileTask" />
+    <typedef name="if" classname="m.pcp.ant.tasks.IfTask" />
+    <typedef name="break" classname="m.pcp.ant.tasks.BreakTask" />
+    <typedef name="continue" classname="m.pcp.ant.tasks.ContinueTask" />
+    
+    <typedef name="pcp" classname="m.pcp.ant.tasks.PCPTask" />
+</antlib>
