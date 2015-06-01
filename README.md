@@ -4,7 +4,7 @@ PrecompileProcessor(下文简称：pcp)是一个古老的工具，它只能在an
 
 ## 在ant中使用pcp
 
-* [导入pcp](https://github.com/alexyuyxj/PrecompileProcessor/wiki/%E5%AE%9A%E4%B9%89%E5%8F%98%E9%87%8F)
+* [导入pcp](https://github.com/alexyuyxj/PrecompileProcessor/wiki/%E5%AF%BC%E5%85%A5pcp)
 
 * [定义变量](https://github.com/alexyuyxj/PrecompileProcessor/wiki/%E5%AE%9A%E4%B9%89%E5%8F%98%E9%87%8F)
 
