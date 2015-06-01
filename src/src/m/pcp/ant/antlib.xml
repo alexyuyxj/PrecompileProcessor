@@ -9,6 +9,7 @@
     <typedef name="if" classname="m.pcp.ant.tasks.IfTask" />
     <typedef name="break" classname="m.pcp.ant.tasks.BreakTask" />
     <typedef name="continue" classname="m.pcp.ant.tasks.ContinueTask" />
+    <typedef name="alias" classname="m.pcp.ant.tasks.AliasTask" />
     
     <typedef name="pcp" classname="m.pcp.ant.tasks.PCPTask" />
 </antlib>
