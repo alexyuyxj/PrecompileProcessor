@@ -37,11 +37,11 @@ public strictfp class ExpressionParser {
 	public String getField(String key) {
 		String value = null;
 		if (key.equals("pcp.version")) {
-			value = "def{version}";
+			value = "1.0.0";
 		} else if (key.equals("pcp.author")) {
-			value = "def{author}";
+			value = "Alex Yu";
 		} else if (key.equals("pcp.email")) {
-			value = "def{email}";
+			value = "alexyu.yxj@gmail.com";
 		} else if (key.equals("pcp.date")) {
 			Calendar cal = Calendar.getInstance();
 			String year = String.valueOf(cal.get(Calendar.YEAR));
