@@ -18,7 +18,7 @@ public class ListTask extends Task {
 		if (arr != null) {
 			for (String str : arr) {
 				ListItem i = new ListItem();
-				i.value = str;
+				i.value = str.trim();
 				this.list.add(i);
 			}
 		}
