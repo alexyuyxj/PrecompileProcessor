@@ -10,6 +10,16 @@
     <typedef name="break" classname="m.pcp.ant.tasks.BreakTask" />
     <typedef name="continue" classname="m.pcp.ant.tasks.ContinueTask" />
     <typedef name="alias" classname="m.pcp.ant.tasks.AliasTask" />
-    
     <typedef name="pcp" classname="m.pcp.ant.tasks.PCPTask" />
+    
+    <typedef name="iset" classname="m.reflect.ant.tasks.SetInstanceFieldAction" />
+    <typedef name="iget" classname="m.reflect.ant.tasks.GetInstanceFieldAction" />
+    <typedef name="sset" classname="m.reflect.ant.tasks.SetStaticFieldAction" />
+    <typedef name="sget" classname="m.reflect.ant.tasks.GetStaticFieldAction" />
+    <typedef name="imethod" classname="m.reflect.ant.tasks.InvokeInstanceMethodAction" />
+    <typedef name="smethod" classname="m.reflect.ant.tasks.InvokeStaticMethodAction" />
+    <typedef name="newinst" classname="m.reflect.ant.tasks.NewInstanceAction" />
+    <typedef name="class" classname="m.reflect.ant.tasks.ImportClassAction" />
+    <typedef name="getref" classname="m.reflect.ant.tasks.GetReferenceAction" />
+    <typedef name="newref" classname="m.reflect.ant.tasks.NewReferenceAction" />
 </antlib>
