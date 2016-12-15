@@ -1,56 +1,36 @@
 package m.pcp;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map.Entry;
 
 public class PCP {
 	private File baseDir;
-	private String[] srcDir;
-	private String buildDir;
-	private MacrosParser parser;
+	private ArrayList<File> srcDir;
+	private File buildDir;
+	private ArrayList<String> preDefines;
 
 	public PCP() {
-		parser = new MacrosParser();
+		srcDir = new ArrayList<File>();
+		preDefines = new ArrayList<String>();
 	}
 	
 	public void start(String[] args) {
 		if (args.length >= 3 && (args.length - 3) % 2 == 0) {
-			setBaseDir(args[0]);
-			setSrcDir(args[1]);
-			setBuildDir(args[2]);
-			File defineFile = null;
-			if (args.length > 3) {
-				try {
-					String[] srcs = args[1].split(",");
-					defineFile = new File(args[0] + File.separatorChar 
-							+ srcs[0] + File.separatorChar +".define");
-					if (defineFile.exists()) {
-						defineFile.delete();
-					}
-					defineFile.createNewFile();
-					OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(defineFile), "UTF-8");
-					BufferedWriter bw = new BufferedWriter(osw);
-					for (int i = 3; i < args.length; i++) {
-						String fieldName = args[i];
-						i++;
-						String fieldValue = args[i];
-						bw.append("//#define " + fieldName + ' ' + fieldValue + '\n');
-					}
-					bw.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			copySrc();
-			if (defineFile != null && defineFile.exists()) {
-				defineFile.delete();
+			try {
+				setBaseDir(args[0]);
+				setSrcDir(args[1]);
+				setBuildDir(args[2]);
+				dumpDefines(args);
+				copyFiles(listSrc());
+			} catch (Throwable t) {
+				t.printStackTrace();
 			}
 		}
 	}
@@ -59,118 +39,142 @@ public class PCP {
 		this.baseDir = new File(baseDir);
 		if (!this.baseDir.exists()) {
 			this.baseDir = null;
-			System.out.println("\"" + baseDir + "\" does not exist");
+			throw new RuntimeException("\"" + baseDir + "\" does not exist");
 		}
 	}
 	
 	private void setSrcDir(String srcDirs) {
-		srcDir = srcDirs.split(",");
-		for (int i = 0; i < srcDir.length; i++) {
-			File dirFile = new File(baseDir.getPath() + File.separatorChar + srcDir[i]);
-			if (!dirFile.exists()) {
-				srcDir[i] = null;
-				System.err.println("\"" + dirFile + "\" does not exist");
+		String[] rawArray = srcDirs.split(",");
+		HashSet<File> set = new HashSet<File>();
+		for (String item : rawArray) {
+			File f = new File(baseDir, item);
+			if (!f.exists()) {
+				throw new RuntimeException("\"" + item + "\" does not exist");
 			}
+			set.add(new File(baseDir, item));
 		}
+		srcDir.clear();
+		srcDir.addAll(set);
 	}
 	
 	private void setBuildDir(String buildDir) {
-		this.buildDir = buildDir;
-		File dir = new File(baseDir.getPath() + File.separatorChar + buildDir);
-		if (dir.exists()) {
-			dir.delete();
+		this.buildDir = new File(baseDir.getPath(), buildDir);
+		if (this.buildDir.exists()) {
+			this.buildDir.delete();
 		}
-		dir.mkdirs();
+		this.buildDir.mkdirs();
 	}
 	
-	private int copySrc() {
-		for (String dir : srcDir) {
-			if (dir != null && buildDir != null) {
-				String srcDirStr = baseDir.getPath() + File.separatorChar + dir;
-				String buildDirStr = baseDir.getPath() + File.separatorChar + buildDir;
-				File[] srcFileList = listFile(new File(srcDirStr), "java");			
-				File defineFile = new File(srcDirStr + File.separatorChar + ".define");
-				if (defineFile.exists()) {
-					File[] fileList = new File[srcFileList.length + 1];
-					fileList[0] = defineFile;
-					System.arraycopy(srcFileList, 0, fileList, 1, srcFileList.length);
-					srcFileList = fileList;
-				}
-				
-				try {
-					for (int i = 0; i < srcFileList.length; i++) {
-						String srcFileStr = srcFileList[i].getPath();
-						File buildFile = new File (buildDirStr 
-								+ srcFileStr.substring(srcDirStr.length()));
-						if (!buildFile.getParentFile().exists()) {
-							buildFile.getParentFile().mkdirs();
-						}
-						if (buildFile.exists()) {
-							buildFile.delete();
-						}
-						buildFile.createNewFile();
-						copyFile(srcFileList[i], buildFile);
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				return srcFileList.length;
+	private void dumpDefines(String[] args) {
+		if (args.length > 3) {
+			preDefines.clear();
+			for (int i = 3; i < args.length; i += 2) {
+				preDefines.add("//#define " + args[i] + " " + args[i + 1]);
 			}
 		}
-		return 0;
 	}
 	
-	private File[] listFile(File folder, String ext) {
+	private HashMap<File, ArrayList<File>> listSrc() {
+		HashMap<File, ArrayList<File>> allSrc = new HashMap<File, ArrayList<File>>();
+		for (File dir : srcDir) {
+			allSrc.put(dir, listFile(dir));
+		}
+		return allSrc;
+	}
+	
+	private ArrayList<File> listFile(File folder) {
+		ArrayList<File> fileList = new ArrayList<File>();
 		if (folder.isDirectory()) {
 			File[] children = folder.listFiles();
-			Vector<File> fileList = new Vector<File>();
-			for (int i = 0; i < children.length; i++) {
-				if (children[i].isDirectory()) {
-					File[] childList = listFile(children[i], ext);
-					for (int j = 0; j < childList.length; j++) {
-						fileList.add(childList[j]);
-					}
-				} else if (children[i].getName().endsWith("." + ext)) {
-					fileList.add(children[i]);
+			for (File child : children) {
+				if (child.isDirectory()) {
+					ArrayList<File> childList = listFile(child);
+					fileList.addAll(childList);
+				} else {
+					fileList.add(child);
 				}
 			}
-			File[] res = new File[fileList.size()];
-			fileList.copyInto(res);
-			return res;
 		}
-		return new File[0];
+		return fileList;
 	}
 	
-	private void copyFile(File srcFile, File destFile) {
-		if (srcFile != null && destFile != null 
-				&& srcFile.exists() && destFile.exists() 
-				&& srcFile.isFile() && destFile.isFile()) {
-			int lineCount = 0;
-			String line = null;
-			try {
-				InputStreamReader isr = new InputStreamReader(new FileInputStream(srcFile), "UTF-8");
-				BufferedReader br = new BufferedReader(isr);
-				OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(destFile), "UTF-8");
-				BufferedWriter bw = new BufferedWriter(osw);
-				line = br.readLine();
-				while (line != null) {
-					lineCount++;
-					String resLine = parser.parseLine(line);
-					if (!resLine.trim().startsWith("//#")) {
-						bw.append(resLine + "\n");
-					}
-					line = br.readLine();
+	private void copyFiles(HashMap<File, ArrayList<File>> allSrc) throws Throwable {
+		byte[] buf = new byte[1024 * 64];
+		MacrosParser parser = new MacrosParser();
+		for (String def : preDefines) {
+			parser.parseLine(def);
+		}
+		
+		for (Entry<File, ArrayList<File>> ent : allSrc.entrySet()) {
+			String folderPath = ent.getKey().getAbsolutePath();
+			if(!folderPath.endsWith(File.separator)) {
+				folderPath += File.separator;
+			}
+			
+			ArrayList<File> srcs = ent.getValue();
+			for (File src : srcs) {
+				String srcPath = src.getAbsolutePath();
+				String path = srcPath.substring(folderPath.length());
+				File dst = new File(buildDir, path);
+				if (dst.exists()) {
+					dst.delete();
 				}
-				bw.flush();
-				bw.close();
-				br.close();
-			} catch (Exception ex) {
-				System.err.println("File: " + srcFile.getPath());
-				System.err.println("Line: " + line.trim());
-				System.err.println("Line Number: " + lineCount + "\n");
-				ex.printStackTrace();
+				if (!dst.getParentFile().exists()) {
+					dst.getParentFile().mkdirs();
+				}
+				
+				if (path.endsWith(".java") || path.endsWith(".groovy")) {
+					copySrc(src, dst, parser);
+				} else {
+					copyFile(src, dst, buf);
+				}
 			}
 		}
+	}
+	
+	private void copySrc(File src, File dst, MacrosParser parser) throws Throwable {
+		FileInputStream fis = new FileInputStream(src);
+		InputStreamReader isr = new InputStreamReader(fis, "utf-8");
+		BufferedReader br = new BufferedReader(isr);
+		StringBuilder sb = new StringBuilder();
+		int lineCount = 0;
+		String line = null;
+		try {
+			line = br.readLine();
+			while (line != null) {
+				lineCount++;
+				String resLine = parser.parseLine(line);
+				if (!resLine.trim().startsWith("//#")) {
+					sb.append(resLine).append("\n");
+				}
+				line = br.readLine();
+			}
+		} catch (Throwable t) {
+			System.err.println("File: " + src);
+			System.err.println("Line: " + line.trim());
+			System.err.println("Line Number: " + lineCount + "\n");
+			throw t;
+		} finally {
+			fis.close();
+		}
+		
+		FileOutputStream fos = new FileOutputStream(dst);
+		fos.write(sb.toString().getBytes("utf-8"));
+		fos.flush();
+		fos.close();
+	}
+	
+	private void copyFile(File src, File dst, byte[] buf) throws Throwable {
+		FileInputStream fis = new FileInputStream(src);
+		FileOutputStream fos = new FileOutputStream(dst);
+		int len = fis.read(buf);
+		while (len != -1) {
+			fos.write(buf, 0, len);
+			len = fis.read(buf);
+		}
+		fos.flush();
+		fos.close();
+		fis.close();
 	}
 	
 }
