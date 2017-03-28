@@ -26,9 +26,24 @@ public class CachePool<K, V> {
 		Node<K, V> n = null;
 		while (size >= capacity) {
 			n = tail;
-			tail = tail.previous;
-			tail.next = null;
-			size--;
+			if (n == null) { // 这肯定是出错了，重新寻找队尾
+				Node<K, V> n1 = head;
+				if (n1 == null) {
+					size = 0;
+					tail = null;
+				} else {
+					size = 1;
+					while (n1.next != null) {
+						size++;
+						n1 = n1.next;
+					}
+					tail = n1;
+				}
+			} else {
+				tail = tail.previous;
+				tail.next = null;
+				size--;
+			}
 		}
 		
 		if (n == null) {
@@ -42,8 +57,11 @@ public class CachePool<K, V> {
 		
 		if (size == 0) {
 			tail = n;
-		} else {
+		} else if (head != null) {
 			head.previous = n;
+		} else { // 这肯定是出错了，要做数据清理
+			tail = n;
+			size = 0;
 		}
 		head = n;
 		size++;
@@ -51,20 +69,21 @@ public class CachePool<K, V> {
 	}
 	
 	public synchronized V get(K key) {
-		Node<K, V> n = head;
-		while (n != null) {
-			if (n.key.equals(key)) {
-				break;
-			} else {
-				n = n.next;
-			}
+		if (head == null) {
+			size = 0;
+			tail = null;
+			return null;
+		} else if (head.key.equals(key)) {
+			return head.value;
 		}
 		
-		if (n != null) {
-			if (n.previous != null) {
+		Node<K, V> n = head;
+		while (n.next != null) {
+			n = n.next;
+			if (n.key.equals(key)) {
 				if (n.next == null) {
 					n.previous.next = null;
-					tail = tail.previous;
+					tail = n.previous;
 				} else {
 					n.previous.next = n.next;
 					n.next.previous = n.previous;
@@ -74,9 +93,8 @@ public class CachePool<K, V> {
 				n.next = head;
 				head.previous = n;
 				head = n;
+				return n.value;
 			}
-			
-			return n.value;
 		}
 		
 		return null;
@@ -100,6 +118,9 @@ public class CachePool<K, V> {
 				}
 				if (n.next != null) {
 					n.next.previous = n.previous;
+				}
+				if (n.equals(head)) {
+					head = head.next;
 				}
 				size--;
 			}
